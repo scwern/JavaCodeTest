@@ -39,7 +39,7 @@ public class WalletControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(walletController)
-                .setControllerAdvice(new com.javacode.exception.GlobalExceptionHandler()) // Добавляем глобальный обработчик
+                .setControllerAdvice(new com.javacode.exception.GlobalExceptionHandler())
                 .build();
         objectMapper = new ObjectMapper();
     }
@@ -55,7 +55,7 @@ public class WalletControllerTest {
         request.setOperationType("DEPOSIT");
         request.setAmount(500L);
 
-        when(walletService.deposit(any(UUID.class), any(Long.class))).thenReturn(wallet);
+        when(walletService.processOperation(any(WalletOperationRequest.class))).thenReturn(wallet);
 
         mockMvc.perform(post("/api/v1/wallets")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -83,12 +83,16 @@ public class WalletControllerTest {
         request.setOperationType("INVALID");
         request.setAmount(500L);
 
+        when(walletService.processOperation(any(WalletOperationRequest.class)))
+                .thenThrow(new IllegalArgumentException("Invalid operation type"));
+
         mockMvc.perform(post("/api/v1/wallets")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Invalid operation type"));
     }
+
 
     @Test
     void createOrUpdateWalletConflict() throws Exception {
@@ -97,7 +101,7 @@ public class WalletControllerTest {
         request.setOperationType("WITHDRAW");
         request.setAmount(500L);
 
-        when(walletService.withdraw(any(UUID.class), any(Long.class)))
+        when(walletService.processOperation(any(WalletOperationRequest.class)))
                 .thenThrow(new OptimisticLockingFailureException("Concurrent modification detected"));
 
         mockMvc.perform(post("/api/v1/wallets")

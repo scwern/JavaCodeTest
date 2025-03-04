@@ -18,7 +18,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        if (ex.getMessage().equals("Wallet not found")) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("{\"error\": \"" + ex.getMessage() + "\"}");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body("{\"error\": \"" + ex.getMessage() + "\"}");
     }
 
